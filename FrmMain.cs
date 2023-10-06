@@ -1,4 +1,5 @@
-﻿using Microsoft.Office.Interop.Word;
+﻿using ExcelDataReader;
+using Microsoft.Office.Interop.Word;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -7,11 +8,9 @@ using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WordAppGUI.UserControls;
-using Excel = Microsoft.Office.Interop.Excel;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace WordAppGUI
@@ -22,6 +21,7 @@ namespace WordAppGUI
         private string ExcelFilePath = "";
         private string WordFilePath = "";
         private Dictionary<string, string> WordParams = new Dictionary<string, string>();
+        private string[] typeArray = null;
         private string OutputFolder = String.Empty;
         private System.Data.DataTable dt = new System.Data.DataTable();
         private string[] titles;
@@ -42,126 +42,73 @@ namespace WordAppGUI
         {
             InitRefresh();
 
-            Excel.Application xlApp = new Excel.Application();
-            Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(ExcelFilePath);
-            Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
-            Excel.Range xlRange = xlWorksheet.UsedRange;
-            int rowCount = xlRange.Rows.Count;
-            int colCount = xlRange.Columns.Count;
-
-            if (rowCount == 0 || colCount == 0)
+            using (var stream = File.Open(ExcelFilePath, FileMode.Open, FileAccess.Read))
             {
-                MessageBox.Show("Excel dosyası boş olamaz", "Boş Dosya", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                ExcelFilePath = "";
-                return;
-            }
+                IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream);
 
-            titles = new string[colCount];
-            //types = new string[colCount];
-
-            for (int i = 0; i < colCount; i++)
-            {
-                titles[i] = xlRange.Cells[1, i + 1].Value2.ToString();
-                //types[i] = xlRange.Cells[2, i + 1].Value2.ToString();
-                cmbFileName.Items.Add(xlRange.Cells[1, i + 1].Value2.ToString());
-
-                MyTextEdit myText = new MyTextEdit();
-                myText.txtKey.Text = xlRange.Cells[1, i + 1].Value2.ToString();
-                myText.txtValue.Text = xlRange.Cells[1, i + 1].Value2.ToString();
-                flowLayoutPanel.Controls.Add(myText);
-
-
-                DataColumn column = new DataColumn(xlRange.Cells[1, i + 1].Value2.ToString(),typeof(string));//Type.GetType("System." + xlRange.Cells[2, i + 1].Value2.ToString()));
-
-                dt.Columns.Add(column);
-                
-            }
-
-            cmbFileName.SelectedIndex = 0;
-
-            for (int i = 1; i <= rowCount; i++)
-            {
-                if (i < 2) continue;
-                DataRow row = dt.NewRow();
-
-                for (int j = 1; j <= colCount; j++)
+                var conf = new ExcelDataSetConfiguration
                 {
-                    if (xlRange.Cells[i, j] != null && xlRange.Cells[i, j].Value2 != null)
+                    ConfigureDataTable = _ => new ExcelDataTableConfiguration
                     {
-                        string vvv = xlRange.Cells[i, j].Value2.ToString();
-
-                        //if (types[j - 1] == "DateTime")
-                        //{
-                        //    vvv = DateTime.FromOADate(Convert.ToDouble(vvv)).Date.ToString("dd.MM.yyyy").Split(' ')[0];
-                        //}
-
-                        row[j - 1] = vvv;
+                        UseHeaderRow = true
                     }
+                };
+
+                var dataSet = reader.AsDataSet(conf);
+
+                dt = dataSet.Tables[0];
+
+                titles = new string[dt.Columns.Count];
+                typeArray = new string[dt.Columns.Count];
+
+                for (int i = 0; i < dt.Columns.Count; i++)
+                {
+                    titles[i] = dt.Columns[i].ColumnName;
+                    cmbFileName.Items.Add(dt.Columns[i].ColumnName);
+
+                    MyTextEdit myText = new MyTextEdit();
+                    myText.txtKey.Text = dt.Columns[i].ColumnName;
+                    myText.txtValue.Text = dt.Columns[i].ColumnName;
+                    myText.cmbTip.SelectedIndex = 0;
+                    flowLayoutPanel.Controls.Add(myText);
+
                 }
 
-                dt.Rows.Add(row);
+                cmbFileName.SelectedIndex = 0;
             }
-
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-            Marshal.ReleaseComObject(xlRange);
-            Marshal.ReleaseComObject(xlWorksheet);
-            xlWorkbook.Close();
-            Marshal.ReleaseComObject(xlWorkbook);
-            xlApp.Quit();
-            Marshal.ReleaseComObject(xlApp);
         }
         private void LoadFile(AppEnums fileType)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-     
-            ofd.Filter = fileType == AppEnums.Excel ? @"Excel Dosyası|*.xlsx" : @"Word Dosyası|*.dotx";
-
-            if (ofd.ShowDialog() == DialogResult.OK)
+            try
             {
-                if (fileType == AppEnums.Excel)
+                OpenFileDialog ofd = new OpenFileDialog();
+
+                ofd.Filter = fileType == AppEnums.Excel ? @"Excel Dosyası|*.xlsx" : @"Word Dosyası|*.dotx";
+
+                if (ofd.ShowDialog() == DialogResult.OK)
                 {
-                    ExcelFilePath = ofd.FileName;
-                    ExcelOperation();
-                    btnWordOpen.Enabled = true;
+                    if (fileType == AppEnums.Excel)
+                    {
+                        ExcelFilePath = ofd.FileName;
+                        ExcelOperation();
+                        btnWordOpen.Enabled = true;
+                    }
+                    else if (fileType == AppEnums.Word)
+                    {
+                        WordFilePath = ofd.FileName;
+                        btnOlustur.Enabled = true;
+                    }
                 }
-                else if (fileType == AppEnums.Word)
-                {
-                    WordFilePath = ofd.FileName;
-                    btnOlustur.Enabled = true;
-                }
             }
-        }
-        private void btnLoadFile_Click(object sender, EventArgs e)
-        {
-            LoadFile(AppEnums.Excel);
-        }
-        private void btnWordOpen_Click(object sender, EventArgs e)
-        {
-            LoadFile(AppEnums.Word);
-        }
-        private void btnOlustur_Click(object sender, EventArgs e)
-        {
-            FillWordParams();
-
-            if (WordParams.Count == 0)
+            catch (Exception ex)
             {
-                MessageBox.Show("En az bir alan doldurmalısınız", "Hata!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                MessageBox.Show(ex.Message, "Hata!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            if (OutputFolder == String.Empty)
-            {
-                OpenOutputFolder();
-            }
-
-            backgroundWorker.RunWorkerAsync();
         }
         private void FillWordParams()
         {
             WordParams.Clear();
-
+            int i = 0;
             foreach (var control in flowLayoutPanel.Controls)
             {
                 var cntrl = control as MyTextEdit;
@@ -169,6 +116,8 @@ namespace WordAppGUI
                 if (string.IsNullOrEmpty(cntrl.txtValue.Text)) continue;
 
                 WordParams.Add(cntrl.txtKey.Text, cntrl.txtValue.Text);
+                typeArray[i] = cntrl.cmbTip.Text;
+                i++;
             }
         }
         private void OpenOutputFolder()
@@ -229,6 +178,7 @@ namespace WordAppGUI
                     {
 
                         int indis = Array.IndexOf(titles, deger);
+                        string tip = typeArray[indis];
 
                         string jData = data[indis].ToString();
 
@@ -236,6 +186,11 @@ namespace WordAppGUI
                         {
                             fileName = Regex.Replace(jData, regexPattern, "");
                         }
+
+                        //if (tip == "Ondalık")
+                        //{
+                        //    jData = Convert.ToDouble(jData).ToString("N2");
+                        //}
 
                         myMergeField.Select();
                         wordApp.Selection.TypeText(jData);
@@ -257,6 +212,31 @@ namespace WordAppGUI
                 
                 backgroundWorker.ReportProgress(percentage);
             }
+        }
+        private void btnLoadFile_Click(object sender, EventArgs e)
+        {
+            LoadFile(AppEnums.Excel);
+        }
+        private void btnWordOpen_Click(object sender, EventArgs e)
+        {
+            LoadFile(AppEnums.Word);
+        }
+        private void btnOlustur_Click(object sender, EventArgs e)
+        {
+            FillWordParams();
+
+            if (WordParams.Count == 0)
+            {
+                MessageBox.Show("En az bir alan doldurmalısınız", "Hata!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (OutputFolder == String.Empty)
+            {
+                OpenOutputFolder();
+            }
+
+            backgroundWorker.RunWorkerAsync();
         }
         private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {

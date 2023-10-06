@@ -30,6 +30,7 @@
         {
             this.txtKey = new System.Windows.Forms.TextBox();
             this.txtValue = new System.Windows.Forms.TextBox();
+            this.cmbTip = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // txtKey
@@ -47,14 +48,29 @@
             this.txtValue.Size = new System.Drawing.Size(127, 20);
             this.txtValue.TabIndex = 0;
             // 
+            // cmbTip
+            // 
+            this.cmbTip.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbTip.FormattingEnabled = true;
+            this.cmbTip.Items.AddRange(new object[] {
+            "Metin",
+            "Tarih",
+            "Sayı",
+            "Ondalık"});
+            this.cmbTip.Location = new System.Drawing.Point(269, 2);
+            this.cmbTip.Name = "cmbTip";
+            this.cmbTip.Size = new System.Drawing.Size(81, 21);
+            this.cmbTip.TabIndex = 1;
+            // 
             // MyTextEdit
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.cmbTip);
             this.Controls.Add(this.txtValue);
             this.Controls.Add(this.txtKey);
             this.Name = "MyTextEdit";
-            this.Size = new System.Drawing.Size(267, 27);
+            this.Size = new System.Drawing.Size(266, 27);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -64,5 +80,6 @@
 
         public System.Windows.Forms.TextBox txtKey;
         public System.Windows.Forms.TextBox txtValue;
+        public System.Windows.Forms.ComboBox cmbTip;
     }
 }

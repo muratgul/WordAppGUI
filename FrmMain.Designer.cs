@@ -61,7 +61,7 @@
             this.flowLayoutPanel.BackColor = System.Drawing.Color.SeaShell;
             this.flowLayoutPanel.Location = new System.Drawing.Point(12, 91);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(273, 347);
+            this.flowLayoutPanel.Size = new System.Drawing.Size(274, 347);
             this.flowLayoutPanel.TabIndex = 1;
             // 
             // btnOlustur
@@ -125,10 +125,10 @@
             // 
             this.richTextBox.BackColor = System.Drawing.Color.MintCream;
             this.richTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox.Location = new System.Drawing.Point(291, 91);
+            this.richTextBox.Location = new System.Drawing.Point(292, 91);
             this.richTextBox.Name = "richTextBox";
             this.richTextBox.ReadOnly = true;
-            this.richTextBox.Size = new System.Drawing.Size(302, 347);
+            this.richTextBox.Size = new System.Drawing.Size(301, 347);
             this.richTextBox.TabIndex = 6;
             this.richTextBox.Text = "";
             // 
