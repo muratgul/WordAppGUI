@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using WordAppGUI.UserControls;
+using Excel = Microsoft.Office.Interop.Excel;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace WordAppGUI
@@ -83,7 +84,7 @@ namespace WordAppGUI
             {
                 OpenFileDialog ofd = new OpenFileDialog();
 
-                ofd.Filter = fileType == AppEnums.Excel ? @"Excel Dosyası|*.xlsx" : @"Word Dosyası|*.dotx";
+                ofd.Filter = fileType == AppEnums.Excel ? @"Excel Dosyası|*.xlsx" : rbWord.Checked ? @"Word Dosyası|*.dotx" : @"Excel Dosyası|*.xlsx"; //dotx
 
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
@@ -134,6 +135,57 @@ namespace WordAppGUI
                 }
             }
         }
+        private void ExcelWriteOperation()
+        {
+            string fileIndex = cmbFileName.Text;
+            string dosyaYolu = WordFilePath;
+            string regexPattern = @"[\\/:*?<>|]";
+            int xx = 0;
+            foreach (DataRow data in dt.Rows)
+            {
+                string fileName = String.Empty;
+
+                Excel.Application excelApp = new Excel.Application();
+                Excel.Workbook workbook = excelApp.Workbooks.Open(dosyaYolu);
+                Excel.Worksheet worksheet = (Excel.Worksheet)workbook.Sheets[1];
+
+                int percentage = (xx + 1) * 100 / dt.Rows.Count;
+                xx++;
+
+                foreach (var wp in WordParams)
+                {
+                    int indis = Array.IndexOf(titles, wp.Key);
+                    string value = data[indis].ToString();
+
+                    worksheet.Range[wp.Value].Value = value;
+
+                    string jData = data[indis].ToString();
+
+                    string deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
+
+                    if (deger == fileIndex)
+                    {
+                        fileName = Regex.Replace(jData, regexPattern, "");
+                    }
+                    
+                }
+                workbook.SaveAs($@"{OutputFolder}\{fileName}.xlsx");
+
+                if (chkPdf.Checked)
+                {
+                    workbook.ExportAsFixedFormat(Excel.XlFixedFormatType.xlTypePDF, $@"{OutputFolder}\{fileName}.pdf");
+                }
+
+                workbook.Close(true);
+                excelApp.Quit();
+
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(excelApp);
+
+                backgroundWorker.ReportProgress(percentage);
+            }
+
+        }
         private void WordOperation()
         {
             btnOlustur.Enabled = false;
@@ -149,7 +201,7 @@ namespace WordAppGUI
             string regexPattern = @"[\\/:*?<>|]";
             int xx = 0;
 
-            foreach (System.Data.DataRow data in dt.Rows)
+            foreach (DataRow data in dt.Rows)
             {
                 int percentage = (xx + 1) * 100 / dt.Rows.Count;
                 xx++;
@@ -242,7 +294,10 @@ namespace WordAppGUI
         {
             try
             {
-                WordOperation();
+                if(rbExcel.Checked)
+                    ExcelWriteOperation();
+                else if(rbWord.Checked)
+                    WordOperation();
             }
             catch (Exception exception)
             {
@@ -279,5 +334,11 @@ namespace WordAppGUI
 
         }
         #endregion
+
+        private void linkLabel1_Click(object sender, EventArgs e)
+        {
+            FrmYardim yardim = new FrmYardim();
+            yardim.ShowDialog();
+        }
     }
 }
