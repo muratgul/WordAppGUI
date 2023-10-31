@@ -119,17 +119,14 @@
   </resheader>
   <data name="richTextBox1.Text" xml:space="preserve">
     <value>Şablon Dosyası Word:
-• Word belgesini açın. 
-• Menüden "Ekle" seçeneğini seçin. 
-• "Hızlı Bölümler" altında "Alan..." seçeneğine tıklayın. 
-• "Alan adları" listesinden "MergeField" seçeneğini seçin. 
-• "Alan adı" alanına belirlediğiniz adı girin.
+Değişkenleri oluşturun.
+Örnek: Ad Soyad: adSoyad
 
 Şablon Dosyası Excel:
 • Excel dosyasında verilerin yazılacağı hücre adresleri not alınmalıdır. 
 
 Veri Dosyası:
-Şablon dosyasında eklemek istediğiniz verileri içeren bir Excel dosyası hazırlayın. Excel dosyasının ilk satırında başlıklar bulunmalıdır. İkinci satır ve sonraki satırlarda alan adına yada hücreye karşılık gelecek verileri ekleyin.
+Şablon dosyasında eklemek istediğiniz verileri içeren bir Excel dosyası hazırlayın. Excel dosyasının ilk satırında başlıklar bulunmalıdır. İkinci satır ve sonraki satırlarda değişkene yada hücreye karşılık gelecek verileri ekleyin.
 
 Uygulama Kullanımı:
 Uygulama üzerinden Veri Dosyasını çağırdığınızda başlıklar ekranda görüntülenir. Verilerinizi, Excel dosyasındaki başlıkların sol tarafına ve şablon dosyasındaki alan adlarının sağ tarafına uygun şekilde girin.

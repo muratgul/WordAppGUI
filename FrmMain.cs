@@ -1,4 +1,5 @@
 ﻿using ExcelDataReader;
+using Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop.Word;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -62,10 +63,13 @@ namespace WordAppGUI
                 titles = new string[dt.Columns.Count];
                 typeArray = new string[dt.Columns.Count];
 
+                cmbFileName2.Items.Add("-");
+
                 for (int i = 0; i < dt.Columns.Count; i++)
                 {
                     titles[i] = dt.Columns[i].ColumnName;
                     cmbFileName.Items.Add(dt.Columns[i].ColumnName);
+                    cmbFileName2.Items.Add(dt.Columns[i].ColumnName);
 
                     MyTextEdit myText = new MyTextEdit();
                     myText.txtKey.Text = dt.Columns[i].ColumnName;
@@ -76,6 +80,7 @@ namespace WordAppGUI
                 }
 
                 cmbFileName.SelectedIndex = 0;
+                cmbFileName2.SelectedIndex = 0;
             }
         }
         private void LoadFile(AppEnums fileType)
@@ -84,7 +89,7 @@ namespace WordAppGUI
             {
                 OpenFileDialog ofd = new OpenFileDialog();
 
-                ofd.Filter = fileType == AppEnums.Excel ? @"Excel Dosyası|*.xlsx" : rbWord.Checked ? @"Word Dosyası|*.dotx" : @"Excel Dosyası|*.xlsx"; //dotx
+                ofd.Filter = fileType == AppEnums.Excel ? @"Excel Dosyası|*.xlsx" : rbWord.Checked ? @"Word Dosyası|*.docx" : @"Excel Dosyası|*.xlsx"; //dotx
 
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
@@ -138,6 +143,7 @@ namespace WordAppGUI
         private void ExcelWriteOperation()
         {
             string fileIndex = cmbFileName.Text;
+            string file2Index = cmbFileName2.Text;
             string dosyaYolu = WordFilePath;
             string regexPattern = @"[\\/:*?<>|]";
             int xx = 0;
@@ -167,7 +173,13 @@ namespace WordAppGUI
                     {
                         fileName = Regex.Replace(jData, regexPattern, "");
                     }
-                    
+                    else if (deger == file2Index)
+                    {
+                        string fn = Regex.Replace(jData, regexPattern, "");
+
+                        fileName = $"{fileName} - {fn}";
+                    }
+
                 }
                 workbook.SaveAs($@"{OutputFolder}\{fileName}.xlsx");
 
@@ -188,10 +200,20 @@ namespace WordAppGUI
         }
         private void WordOperation()
         {
+            Word.Application wordApp;
+
+            void FindAndReplace(object findText, object replaceText)
+            {
+                wordApp.Selection.Find.Execute(ref findText, true, true, false, false, false, true, false, 1,
+                    ref replaceText, 2, false, false, false, false);
+            }
+
+
             btnOlustur.Enabled = false;
             btnLoadFile.Enabled = false;
 
             string fileIndex = cmbFileName.Text;
+            string file2Index = cmbFileName2.Text;
 
             string templatePath = WordFilePath;
 
@@ -208,46 +230,69 @@ namespace WordAppGUI
 
                 string fileName = String.Empty;
 
-                Word.Application wordApp = new Word.Application();
+                wordApp = new Word.Application();
                 Document wordDoc = new Document();
                 wordDoc = wordApp.Documents.Add(ref oTemplatePath, ref oMissing, ref oMissing, ref oMissing);
 
                 int y = 0;
 
-                foreach (Field myMergeField in wordDoc.Fields)
+                foreach (var wp in WordParams)
                 {
-                    Range rngFieldCode = myMergeField.Code;
-                    String fieldText = rngFieldCode.Text;
+                    int indis = Array.IndexOf(titles, wp.Key);
+                    string value = data[indis].ToString();
 
-                    Int32 endMerge = fieldText.IndexOf("\\");
-                    Int32 fieldNameLength = fieldText.Length - endMerge;
-                    String fieldName = fieldText.Substring(11, endMerge - 11);
-                    fieldName = fieldName.Trim();
+                    FindAndReplace(wp.Value, value);
 
-                    string deger = WordParams.FirstOrDefault(x => x.Value == fieldName).Key;
+                    string jData = data[indis].ToString();
 
-                    if (deger != null)
+                    string deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
+
+                    if (deger == fileIndex)
                     {
+                        fileName = Regex.Replace(jData, regexPattern, "");
+                    }
+                    else if (deger == file2Index)
+                    {
+                        string fn = Regex.Replace(jData, regexPattern, "");
 
-                        int indis = Array.IndexOf(titles, deger);
-                        string tip = typeArray[indis];
-
-                        string jData = data[indis].ToString();
-
-                        if (deger == fileIndex)
-                        {
-                            fileName = Regex.Replace(jData, regexPattern, "");
-                        }
-
-                        //if (tip == "Ondalık")
-                        //{
-                        //    jData = Convert.ToDouble(jData).ToString("N2");
-                        //}
-
-                        myMergeField.Select();
-                        wordApp.Selection.TypeText(jData);
+                        fileName = $"{fileName} - {fn}";
                     }
                 }
+
+                //foreach (Field myMergeField in wordDoc.Fields)
+                //{
+                //    Word.Range rngFieldCode = myMergeField.Code;
+                //    String fieldText = rngFieldCode.Text;
+
+                //    Int32 endMerge = fieldText.IndexOf("\\");
+                //    Int32 fieldNameLength = fieldText.Length - endMerge;
+                //    String fieldName = fieldText.Substring(11, endMerge - 11);
+                //    fieldName = fieldName.Trim();
+
+                //    string deger = WordParams.FirstOrDefault(x => x.Value == fieldName).Key;
+
+                //    if (deger != null)
+                //    {
+
+                //        int indis = Array.IndexOf(titles, deger);
+                //        string tip = typeArray[indis];
+
+                //        string jData = data[indis].ToString();
+
+                //        if (deger == fileIndex)
+                //        {
+                //            fileName = Regex.Replace(jData, regexPattern, "");
+                //        }
+
+                //        //if (tip == "Ondalık")
+                //        //{
+                //        //    jData = Convert.ToDouble(jData).ToString("N2");
+                //        //}
+
+                //        myMergeField.Select();
+                //        wordApp.Selection.TypeText(jData);
+                //    }
+                //}
 
                 wordDoc.SaveAs($@"{OutputFolder}\{fileName}.docx");
                 richTextBox.AppendText($" {fileName}.docx\n");
