@@ -152,8 +152,8 @@ namespace WordAppGUI
                 string fileName = String.Empty;
 
                 Excel.Application excelApp = new Excel.Application();
-                Excel.Workbook workbook = excelApp.Workbooks.Open(dosyaYolu);
-                Excel.Worksheet worksheet = (Excel.Worksheet)workbook.Sheets[1];
+                Workbook workbook = excelApp.Workbooks.Open(dosyaYolu);
+                Worksheet worksheet = (Worksheet)workbook.Sheets[1];
 
                 int percentage = (xx + 1) * 100 / dt.Rows.Count;
                 xx++;
