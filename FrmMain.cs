@@ -73,7 +73,7 @@ namespace WordAppGUI
 
                     MyTextEdit myText = new MyTextEdit();
                     myText.txtKey.Text = dt.Columns[i].ColumnName;
-                    myText.txtValue.Text = dt.Columns[i].ColumnName;
+                    myText.txtValue.Text = "@" + dt.Columns[i].ColumnName;
                     myText.cmbTip.SelectedIndex = 0;
                     flowLayoutPanel.Controls.Add(myText);
 
@@ -241,6 +241,15 @@ namespace WordAppGUI
                     int indis = Array.IndexOf(titles, wp.Key);
                     string value = data[indis].ToString();
 
+                    string pattern = @"\d{2}\.\d{2}\.\d{4}";
+
+                    Match match = Regex.Match(value, pattern);
+
+                    if (match.Success) 
+                    {
+                        value = match.Value;
+                    }
+
                     FindAndReplace(wp.Value, value);
 
                     string jData = data[indis].ToString();
@@ -259,40 +268,6 @@ namespace WordAppGUI
                     }
                 }
 
-                //foreach (Field myMergeField in wordDoc.Fields)
-                //{
-                //    Word.Range rngFieldCode = myMergeField.Code;
-                //    String fieldText = rngFieldCode.Text;
-
-                //    Int32 endMerge = fieldText.IndexOf("\\");
-                //    Int32 fieldNameLength = fieldText.Length - endMerge;
-                //    String fieldName = fieldText.Substring(11, endMerge - 11);
-                //    fieldName = fieldName.Trim();
-
-                //    string deger = WordParams.FirstOrDefault(x => x.Value == fieldName).Key;
-
-                //    if (deger != null)
-                //    {
-
-                //        int indis = Array.IndexOf(titles, deger);
-                //        string tip = typeArray[indis];
-
-                //        string jData = data[indis].ToString();
-
-                //        if (deger == fileIndex)
-                //        {
-                //            fileName = Regex.Replace(jData, regexPattern, "");
-                //        }
-
-                //        //if (tip == "Ondalık")
-                //        //{
-                //        //    jData = Convert.ToDouble(jData).ToString("N2");
-                //        //}
-
-                //        myMergeField.Select();
-                //        wordApp.Selection.TypeText(jData);
-                //    }
-                //}
 
                 wordDoc.SaveAs($@"{OutputFolder}\{fileName}.docx");
                 richTextBox.AppendText($" {fileName}.docx\n");
