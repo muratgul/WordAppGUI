@@ -69,14 +69,18 @@
             // 
             // flowLayoutPanel
             // 
+            this.flowLayoutPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.flowLayoutPanel.AutoScroll = true;
             this.flowLayoutPanel.BackColor = System.Drawing.Color.SeaShell;
             this.flowLayoutPanel.Location = new System.Drawing.Point(15, 121);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(274, 347);
+            this.flowLayoutPanel.Size = new System.Drawing.Size(301, 347);
             this.flowLayoutPanel.TabIndex = 1;
             // 
             // btnOlustur
             // 
+            this.btnOlustur.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOlustur.BackColor = System.Drawing.Color.DarkRed;
             this.btnOlustur.Enabled = false;
             this.btnOlustur.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -125,19 +129,22 @@
             // 
             // richTextBox
             // 
+            this.richTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBox.BackColor = System.Drawing.Color.MintCream;
             this.richTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox.Location = new System.Drawing.Point(295, 121);
+            this.richTextBox.Location = new System.Drawing.Point(322, 121);
             this.richTextBox.Name = "richTextBox";
             this.richTextBox.ReadOnly = true;
-            this.richTextBox.Size = new System.Drawing.Size(431, 347);
+            this.richTextBox.Size = new System.Drawing.Size(404, 347);
             this.richTextBox.TabIndex = 6;
             this.richTextBox.Text = "";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(291, 105);
+            this.label3.Location = new System.Drawing.Point(319, 105);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(25, 13);
             this.label3.TabIndex = 5;
@@ -275,7 +282,6 @@
             this.Controls.Add(this.flowLayoutPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MaximizeBox = false;
             this.Name = "FrmMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Word Excel Maker";

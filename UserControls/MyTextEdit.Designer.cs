@@ -35,7 +35,8 @@
             // 
             // txtKey
             // 
-            this.txtKey.Location = new System.Drawing.Point(3, 3);
+            this.txtKey.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtKey.Location = new System.Drawing.Point(1, 0);
             this.txtKey.Name = "txtKey";
             this.txtKey.ReadOnly = true;
             this.txtKey.Size = new System.Drawing.Size(127, 20);
@@ -43,7 +44,7 @@
             // 
             // txtValue
             // 
-            this.txtValue.Location = new System.Drawing.Point(136, 3);
+            this.txtValue.Location = new System.Drawing.Point(133, 1);
             this.txtValue.Name = "txtValue";
             this.txtValue.Size = new System.Drawing.Size(127, 20);
             this.txtValue.TabIndex = 0;
@@ -70,7 +71,7 @@
             this.Controls.Add(this.txtValue);
             this.Controls.Add(this.txtKey);
             this.Name = "MyTextEdit";
-            this.Size = new System.Drawing.Size(266, 27);
+            this.Size = new System.Drawing.Size(266, 20);
             this.ResumeLayout(false);
             this.PerformLayout();
 
