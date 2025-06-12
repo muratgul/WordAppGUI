@@ -1,16 +1,19 @@
-﻿using ExcelDataReader;
-using Microsoft.Office.Interop.Excel;
-using Microsoft.Office.Interop.Word;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using ExcelDataReader;
+using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Interop.Word;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WordAppGUI.UserControls;
 using Excel = Microsoft.Office.Interop.Excel;
 using Word = Microsoft.Office.Interop.Word;
@@ -40,6 +43,11 @@ namespace WordAppGUI
             cmbFileName.Items.Clear();
             richTextBox.Clear();
         }
+        private void FindAndReplace(Word.Application wordApp, object findText, object replaceText)
+        {
+            wordApp.Selection.Find.Execute(ref findText, true, true, false, false, false, true, false, 1,
+                ref replaceText, 2, false, false, false, false);
+        }
         private void ExcelOperation()
         {
             InitRefresh();
@@ -65,7 +73,7 @@ namespace WordAppGUI
 
                 cmbFileName2.Items.Add("-");
 
-                for (int i = 0; i < dt.Columns.Count; i++)
+                for (var i = 0; i < dt.Columns.Count; i++)
                 {
                     titles[i] = dt.Columns[i].ColumnName;
                     cmbFileName.Items.Add(dt.Columns[i].ColumnName);
@@ -114,7 +122,7 @@ namespace WordAppGUI
         private void FillWordParams()
         {
             WordParams.Clear();
-            int i = 0;
+            var i = 0;
             foreach (var control in flowLayoutPanel.Controls)
             {
                 var cntrl = control as MyTextEdit;
@@ -141,6 +149,218 @@ namespace WordAppGUI
             }
         }
         private void ExcelWriteOperation()
+        {
+            var fileIndex = cmbFileName.Text;
+            var file2Index = cmbFileName2.Text;
+            var dosyaYolu = WordFilePath;
+            var regexPattern = @"[\\/:*?<>|]";
+            Excel.Application excelApp = new Excel.Application();
+
+            try
+            {
+                for (var xx = 0; xx < dt.Rows.Count; xx++)
+                {
+                    DataRow data = dt.Rows[xx];
+                    var fileName = String.Empty;
+                    Workbook workbook = excelApp.Workbooks.Open(dosyaYolu);
+                    Worksheet worksheet = (Worksheet)workbook.Sheets[1];
+
+                    xx++;
+
+                    foreach (var wp in WordParams)
+                    {
+                        var indis = Array.IndexOf(titles, wp.Key);
+                        var value = data[indis].ToString();
+
+                        worksheet.Range[wp.Value].Value = value;
+
+                        var jData = data[indis].ToString();
+
+                        var deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
+
+                        if (deger == fileIndex)
+                        {
+                            fileName = Regex.Replace(jData, regexPattern, "");
+                        }
+                        else if (deger == file2Index)
+                        {
+                            var fn = Regex.Replace(jData, regexPattern, "");
+
+                            fileName = $"{fileName} - {fn}";
+                        }
+
+                    }
+
+                    workbook.SaveAs($@"{OutputFolder}\{fileName}.xlsx");
+                    if (chkPdf.Checked)
+                    {
+                        CreatePdfFile(workbook, fileName, null, AppEnums.Excel);
+                    }
+                    workbook.Close(true);
+                    Marshal.ReleaseComObject(workbook);
+
+                    var percentage = (xx + 1) * 100 / dt.Rows.Count;
+                    backgroundWorker.ReportProgress(percentage);
+                }
+            }
+            finally
+            {
+                excelApp.Quit();
+                Marshal.ReleaseComObject(excelApp);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+        }        
+        private void WordOperation()
+        {
+            Word.Application wordApp;
+            btnOlustur.Enabled = false;
+            btnLoadFile.Enabled = false;
+
+            var fileIndex = cmbFileName.Text;
+            var file2Index = cmbFileName2.Text;
+
+            var templatePath = WordFilePath;
+
+            Object oMissing = System.Reflection.Missing.Value;
+            Object oTemplatePath = templatePath;
+
+            var regexPattern = @"[\\/:*?<>|]";
+            var xx = 0;
+
+            foreach (DataRow data in dt.Rows)
+            {
+                var percentage = (xx + 1) * 100 / dt.Rows.Count;
+                xx++;
+
+                var fileName = String.Empty;
+
+                wordApp = new Word.Application();
+                Document wordDoc = new Document();
+                wordDoc = wordApp.Documents.Add(ref oTemplatePath, ref oMissing, ref oMissing, ref oMissing);
+
+                foreach (var wp in WordParams)
+                {
+                    var indis = Array.IndexOf(titles, wp.Key);
+                    var value = data[indis].ToString();
+
+                    var pattern = @"\d{2}\.\d{2}\.\d{4}";
+
+                    Match match = Regex.Match(value, pattern);
+
+                    if (match.Success) 
+                    {
+                        value = match.Value;
+                    }
+
+                    FindAndReplace(wordApp, wp.Value, value);
+
+                    var jData = data[indis].ToString();
+
+                    var deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
+
+                    if (deger == fileIndex)
+                    {
+                        fileName = Regex.Replace(jData, regexPattern, "");
+                    }
+                    else if (deger == file2Index)
+                    {
+                        var fn = Regex.Replace(jData, regexPattern, "");
+
+                        fileName = $"{fileName} - {fn}";
+                    }
+                }
+
+
+                wordDoc.SaveAs($@"{OutputFolder}\{fileName}.docx");
+                AppendTextSafe($" {fileName}.docx\n");
+
+                if (chkPdf.Checked)
+                {
+                    CreatePdfFile(wordDoc, fileName, oMissing, AppEnums.Word);
+                    AppendTextSafe($" {fileName}.pdf\n");
+                }
+
+                wordApp.Application.Quit();
+                
+                backgroundWorker.ReportProgress(percentage);
+            }
+        }
+        private void CreatePdfFile(object document, string fileName, Object oMissing, AppEnums type)
+        {
+            if (type == AppEnums.Word)
+            {
+                ((Document)document).ExportAsFixedFormat($@"{OutputFolder}\{fileName}.pdf", WdExportFormat.wdExportFormatPDF, false, WdExportOptimizeFor.wdExportOptimizeForOnScreen,
+                         WdExportRange.wdExportAllDocument, 1, 1, WdExportItem.wdExportDocumentContent, true, true,
+                        WdExportCreateBookmarks.wdExportCreateHeadingBookmarks, true, true, false, ref oMissing);
+            }
+            else if (type == AppEnums.Excel)
+            {
+                ((Workbook)document).ExportAsFixedFormat(XlFixedFormatType.xlTypePDF, $@"{OutputFolder}\{fileName}.pdf");
+            }
+               
+        }
+        private void AppendTextSafe(string text)
+        {
+            if (richTextBox.InvokeRequired)
+            {
+                richTextBox.Invoke(new System.Action(() => richTextBox.AppendText(text)));
+            }
+            else
+            {
+                richTextBox.AppendText(text);
+            }
+        }
+        private void btnLoadFile_Click(object sender, EventArgs e)
+        {
+            LoadFile(AppEnums.Excel);
+        }
+        private void btnWordOpen_Click(object sender, EventArgs e)
+        {
+            LoadFile(AppEnums.Word);
+        }
+        private void btnOlustur_Click(object sender, EventArgs e)
+        {
+            FillWordParams();
+
+            if (WordParams.Count == 0)
+            {
+                MessageBox.Show("En az bir alan doldurmalısınız", "Hata!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (OutputFolder == String.Empty)
+            {
+                OpenOutputFolder();
+            }
+
+            backgroundWorker.RunWorkerAsync();
+        }
+        private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                if(rbExcel.Checked)
+                    ExcelWriteOperation();
+                else if(rbWord.Checked)
+                    WordOperation();
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            btnLoadFile.Enabled = true;
+            MessageBox.Show("Dosyalar oluşturuldu", "Oluşturma İşlemi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            btnOlustur.Enabled = true;
+        }
+        private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            progressBar.Value = e.ProgressPercentage;
+        }
+
+        #region UnusedMethods
+        private void ExcelWriteOperation_X()
         {
             string fileIndex = cmbFileName.Text;
             string file2Index = cmbFileName2.Text;
@@ -198,141 +418,6 @@ namespace WordAppGUI
             }
 
         }
-        private void WordOperation()
-        {
-            Word.Application wordApp;
-
-            void FindAndReplace(object findText, object replaceText)
-            {
-                wordApp.Selection.Find.Execute(ref findText, true, true, false, false, false, true, false, 1,
-                    ref replaceText, 2, false, false, false, false);
-            }
-
-
-            btnOlustur.Enabled = false;
-            btnLoadFile.Enabled = false;
-
-            string fileIndex = cmbFileName.Text;
-            string file2Index = cmbFileName2.Text;
-
-            string templatePath = WordFilePath;
-
-            Object oMissing = System.Reflection.Missing.Value;
-            Object oTemplatePath = templatePath;
-
-            string regexPattern = @"[\\/:*?<>|]";
-            int xx = 0;
-
-            foreach (DataRow data in dt.Rows)
-            {
-                int percentage = (xx + 1) * 100 / dt.Rows.Count;
-                xx++;
-
-                string fileName = String.Empty;
-
-                wordApp = new Word.Application();
-                Document wordDoc = new Document();
-                wordDoc = wordApp.Documents.Add(ref oTemplatePath, ref oMissing, ref oMissing, ref oMissing);
-
-                int y = 0;
-
-                foreach (var wp in WordParams)
-                {
-                    int indis = Array.IndexOf(titles, wp.Key);
-                    string value = data[indis].ToString();
-
-                    string pattern = @"\d{2}\.\d{2}\.\d{4}";
-
-                    Match match = Regex.Match(value, pattern);
-
-                    if (match.Success) 
-                    {
-                        value = match.Value;
-                    }
-
-                    FindAndReplace(wp.Value, value);
-
-                    string jData = data[indis].ToString();
-
-                    string deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
-
-                    if (deger == fileIndex)
-                    {
-                        fileName = Regex.Replace(jData, regexPattern, "");
-                    }
-                    else if (deger == file2Index)
-                    {
-                        string fn = Regex.Replace(jData, regexPattern, "");
-
-                        fileName = $"{fileName} - {fn}";
-                    }
-                }
-
-
-                wordDoc.SaveAs($@"{OutputFolder}\{fileName}.docx");
-                richTextBox.AppendText($" {fileName}.docx\n");
-
-                if (chkPdf.Checked)
-                {
-                    wordDoc.ExportAsFixedFormat($@"{OutputFolder}\{fileName}.pdf", WdExportFormat.wdExportFormatPDF, false, WdExportOptimizeFor.wdExportOptimizeForOnScreen,
-                      WdExportRange.wdExportAllDocument, 1, 1, WdExportItem.wdExportDocumentContent, true, true,
-                     WdExportCreateBookmarks.wdExportCreateHeadingBookmarks, true, true, false, ref oMissing);
-                    richTextBox.AppendText($" {fileName}.pdf\n");
-                }
-
-                wordApp.Application.Quit();
-                
-                backgroundWorker.ReportProgress(percentage);
-            }
-        }
-        private void btnLoadFile_Click(object sender, EventArgs e)
-        {
-            LoadFile(AppEnums.Excel);
-        }
-        private void btnWordOpen_Click(object sender, EventArgs e)
-        {
-            LoadFile(AppEnums.Word);
-        }
-        private void btnOlustur_Click(object sender, EventArgs e)
-        {
-            FillWordParams();
-
-            if (WordParams.Count == 0)
-            {
-                MessageBox.Show("En az bir alan doldurmalısınız", "Hata!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (OutputFolder == String.Empty)
-            {
-                OpenOutputFolder();
-            }
-
-            backgroundWorker.RunWorkerAsync();
-        }
-        private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            try
-            {
-                if(rbExcel.Checked)
-                    ExcelWriteOperation();
-                else if(rbWord.Checked)
-                    WordOperation();
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show(exception.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-            btnLoadFile.Enabled = true;
-            MessageBox.Show("Dosyalar oluşturuldu", "Oluşturma İşlemi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            btnOlustur.Enabled = true;
-        }
-        private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            progressBar.Value = e.ProgressPercentage;
-        }
-        #region UnusedMethods
         private void RunOperation()
         {
             jsonFileContent = File.ReadAllText($@"D:\Users\bim03\Documents\Repos\WordApp\WordApp\bin\Debug\data\data.json");
