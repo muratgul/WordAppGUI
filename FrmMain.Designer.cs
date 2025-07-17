@@ -69,7 +69,7 @@
             this.btnLoadFile.TabIndex = 0;
             this.btnLoadFile.Text = "Veri Dosyası";
             this.btnLoadFile.UseVisualStyleBackColor = false;
-            this.btnLoadFile.Click += new System.EventHandler(this.btnLoadFile_Click);
+            this.btnLoadFile.Click += new System.EventHandler(this.BtnLoadFile_Click);
             // 
             // flowLayoutPanel
             // 
@@ -95,7 +95,7 @@
             this.btnOlustur.TabIndex = 2;
             this.btnOlustur.Text = "Oluştur";
             this.btnOlustur.UseVisualStyleBackColor = false;
-            this.btnOlustur.Click += new System.EventHandler(this.btnOlustur_Click);
+            this.btnOlustur.Click += new System.EventHandler(this.BtnOlustur_Click);
             // 
             // cmbFileName
             // 
@@ -119,9 +119,9 @@
             // backgroundWorker
             // 
             this.backgroundWorker.WorkerReportsProgress = true;
-            this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
-            this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker_ProgressChanged);
-            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
+            this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWorker_DoWork);
+            this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWorker_ProgressChanged);
+            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorker_RunWorkerCompleted);
             // 
             // label2
             // 
@@ -177,7 +177,7 @@
             this.btnWordOpen.TabIndex = 8;
             this.btnWordOpen.Text = "Şablon";
             this.btnWordOpen.UseVisualStyleBackColor = false;
-            this.btnWordOpen.Click += new System.EventHandler(this.btnWordOpen_Click);
+            this.btnWordOpen.Click += new System.EventHandler(this.BtnWordOpen_Click);
             // 
             // rbExcel
             // 
@@ -213,7 +213,7 @@
             this.linkLabel1.TabIndex = 10;
             this.linkLabel1.TabStop = true;
             this.linkLabel1.Text = "Yardım";
-            this.linkLabel1.Click += new System.EventHandler(this.linkLabel1_Click);
+            this.linkLabel1.Click += new System.EventHandler(this.LinkLabel1_Click);
             // 
             // cmbFileName2
             // 
@@ -281,7 +281,7 @@
             this.btnDurdur.TabIndex = 2;
             this.btnDurdur.Text = "Durdur";
             this.btnDurdur.UseVisualStyleBackColor = false;
-            this.btnDurdur.Click += new System.EventHandler(this.btnDurdur_Click);
+            this.btnDurdur.Click += new System.EventHandler(this.BtnDurdur_Click);
             // 
             // statusStrip1
             // 
@@ -299,7 +299,6 @@
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(125, 17);
             this.toolStripStatusLabel1.Text = "Yeni Çalışma : Ctrl + N";
-            this.toolStripStatusLabel1.Click += new System.EventHandler(this.toolStripStatusLabel1_Click);
             // 
             // FrmMain
             // 

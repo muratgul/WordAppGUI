@@ -198,6 +198,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppEnums.cs" />
+    <Compile Include="MyConstants.cs" />
     <Compile Include="FrmMain.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -210,6 +211,7 @@
     <Compile Include="FrmYardim.Designer.cs">
       <DependentUpon>FrmYardim.cs</DependentUpon>
     </Compile>
+    <Compile Include="MyMessages.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UserControls\MyTextEdit.cs">
