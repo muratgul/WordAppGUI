@@ -32,6 +32,7 @@ namespace WordAppGUI
         {
             InitializeComponent();
             CheckForIllegalCrossThreadCalls = false;
+            backgroundWorker.WorkerSupportsCancellation = true;
         }
         private void InitRefresh()
         {
@@ -40,6 +41,9 @@ namespace WordAppGUI
             flowLayoutPanel.Controls.Clear();
             cmbFileName.Items.Clear();
             richTextBox.Clear();
+            btnOlustur.Enabled = false;
+            btnDurdur.Enabled = false;
+            chkPdf.Checked = false;
         }
         private void FindAndReplace(Word.Application wordApp, object findText, object replaceText)
         {
@@ -146,142 +150,203 @@ namespace WordAppGUI
                 }
             }
         }
-        private void ExcelWriteOperation()
+        private void ExcelWriteOperation(DoWorkEventArgs e)
         {
             var fileIndex = cmbFileName.Text;
             var file2Index = cmbFileName2.Text;
-            var dosyaYolu = WordFilePath;
+            var dosyaYolu = ExcelFilePath;
             var regexPattern = @"[\\/:*?<>|]";
-            Excel.Application excelApp = new Excel.Application();
+            Excel.Application excelApp = null;
 
             try
             {
-                for (var xx = 0; xx < dt.Rows.Count; xx++)
+                excelApp = new Excel.Application();
+                excelApp.Visible = false;
+                excelApp.DisplayAlerts = false;
+
+                for (var i = 0; i < dt.Rows.Count; i++)
                 {
-                    DataRow data = dt.Rows[xx];
-                    var fileName = String.Empty;
-                    Workbook workbook = excelApp.Workbooks.Open(dosyaYolu);
-                    Worksheet worksheet = (Worksheet)workbook.Sheets[1];
-
-                    xx++;
-
-                    foreach (var wp in WordParams)
+                    if (backgroundWorker.CancellationPending)
                     {
-                        var indis = Array.IndexOf(titles, wp.Key);
-                        var value = data[indis].ToString();
-
-                        worksheet.Range[wp.Value].Value = value;
-
-                        var jData = data[indis].ToString();
-
-                        var deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
-
-                        if (deger == fileIndex)
-                        {
-                            fileName = Regex.Replace(jData, regexPattern, "");
-                        }
-                        else if (deger == file2Index)
-                        {
-                            var fn = Regex.Replace(jData, regexPattern, "");
-
-                            fileName = $"{fileName} - {fn}";
-                        }
-
+                        e.Cancel = true;
+                        break;
                     }
-
-                    workbook.SaveAs($@"{OutputFolder}\{fileName}.xlsx");
-                    if (chkPdf.Checked)
+                    Workbook workbook = null;
+                    Worksheet worksheet = null;
+                    try
                     {
-                        CreatePdfFile(workbook, fileName, null, AppEnums.Excel);
-                    }
-                    workbook.Close(true);
-                    Marshal.ReleaseComObject(workbook);
+                        DataRow data = dt.Rows[i];
+                        var fileName = String.Empty;
+                        workbook = excelApp.Workbooks.Open(dosyaYolu);
+                        worksheet = (Worksheet)workbook.Sheets[1];
 
-                    var percentage = (xx + 1) * 100 / dt.Rows.Count;
-                    backgroundWorker.ReportProgress(percentage);
+                        foreach (var wp in WordParams)
+                        {
+                            var indis = Array.IndexOf(titles, wp.Key);
+                            var rawValue = data[indis];
+                            string value;
+
+                            if (rawValue is DateTime dateTimeValue)
+                            {
+                                value = dateTimeValue.ToString("dd.MM.yyyy");
+                            }
+                            else
+                            {
+                                value = rawValue.ToString();
+                            }
+
+                            worksheet.Range[wp.Value].Value = value;
+
+                            var jData = data[indis].ToString();
+                            var deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
+
+                            if (deger == fileIndex)
+                            {
+                                fileName = Regex.Replace(jData, regexPattern, "");
+                            }
+                            else if (deger == file2Index)
+                            {
+                                var fn = Regex.Replace(jData, regexPattern, "");
+                                fileName = $"{fileName} - {fn}";
+                            }
+                        }
+
+                        workbook.SaveAs($@"{OutputFolder}\\{fileName}.xlsx");
+                        if (chkPdf.Checked)
+                        {
+                            CreatePdfFile(workbook, fileName, null, AppEnums.Excel);
+                        }
+
+                        var percentage = (i + 1) * 100 / dt.Rows.Count;
+                        backgroundWorker.ReportProgress(percentage);
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendTextSafe($"Hata (Satır {i + 1}): {ex.Message}\n");
+                    }
+                    finally
+                    {
+                        if (workbook != null)
+                        {
+                            workbook.Close(false);
+                            Marshal.ReleaseComObject(workbook);
+                        }
+                        if (worksheet != null)
+                        {
+                            Marshal.ReleaseComObject(worksheet);
+                        }
+                    }
                 }
             }
             finally
             {
-                excelApp.Quit();
-                Marshal.ReleaseComObject(excelApp);
+                if (excelApp != null)
+                {
+                    excelApp.Quit();
+                    Marshal.ReleaseComObject(excelApp);
+                }
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
             }
-        }        
-        private void WordOperation()
+        }
+        private void WordOperation(DoWorkEventArgs e)
         {
-            Word.Application wordApp;
-            btnOlustur.Enabled = false;
-            btnLoadFile.Enabled = false;
-
-            var fileIndex = cmbFileName.Text;
-            var file2Index = cmbFileName2.Text;
-
-            var templatePath = WordFilePath;
-
-            Object oMissing = System.Reflection.Missing.Value;
-            Object oTemplatePath = templatePath;
-
-            var regexPattern = @"[\\/:*?<>|]";
-            var xx = 0;
-
-            foreach (DataRow data in dt.Rows)
+            Word.Application wordApp = null;
+            try
             {
-                var percentage = (xx + 1) * 100 / dt.Rows.Count;
-                xx++;
+                btnOlustur.Enabled = false;
+                btnLoadFile.Enabled = false;
 
-                var fileName = String.Empty;
+                var fileIndex = cmbFileName.Text;
+                var file2Index = cmbFileName2.Text;
+                var templatePath = WordFilePath;
+
+                Object oMissing = System.Reflection.Missing.Value;
+                Object oTemplatePath = templatePath;
+
+                var regexPattern = @"[\\/:*?<>|]";
 
                 wordApp = new Word.Application();
-                Document wordDoc = new Document();
-                wordDoc = wordApp.Documents.Add(ref oTemplatePath, ref oMissing, ref oMissing, ref oMissing);
+                wordApp.Visible = false;
 
-                foreach (var wp in WordParams)
+                for (var i = 0; i < dt.Rows.Count; i++)
                 {
-                    var indis = Array.IndexOf(titles, wp.Key);
-                    var value = data[indis].ToString();
-
-                    var pattern = @"\d{2}\.\d{2}\.\d{4}";
-
-                    Match match = Regex.Match(value, pattern);
-
-                    if (match.Success) 
+                    if (backgroundWorker.CancellationPending)
                     {
-                        value = match.Value;
+                        e.Cancel = true;
+                        break;
                     }
 
-                    FindAndReplace(wordApp, wp.Value, value);
-
-                    var jData = data[indis].ToString();
-
-                    var deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
-
-                    if (deger == fileIndex)
+                    Document wordDoc = null;
+                    try
                     {
-                        fileName = Regex.Replace(jData, regexPattern, "");
+                        DataRow data = dt.Rows[i];
+                        var percentage = (i + 1) * 100 / dt.Rows.Count;
+                        var fileName = String.Empty;
+
+                        wordDoc = wordApp.Documents.Add(ref oTemplatePath, ref oMissing, ref oMissing, ref oMissing);
+
+                        foreach (var wp in WordParams)
+                        {
+                            var indis = Array.IndexOf(titles, wp.Key);
+                            var value = data[indis].ToString();
+
+                            var pattern = @"\d{2}\.\d{2}\.\d{4}";
+                            Match match = Regex.Match(value, pattern);
+
+                            if (match.Success)
+                            {
+                                value = match.Value;
+                            }
+
+                            FindAndReplace(wordApp, wp.Value, value);
+
+                            var jData = data[indis].ToString();
+                            var deger = WordParams.FirstOrDefault(x => x.Key == wp.Key).Key;
+
+                            if (deger == fileIndex)
+                            {
+                                fileName = Regex.Replace(jData, regexPattern, "");
+                            }
+                            else if (deger == file2Index)
+                            {
+                                var fn = Regex.Replace(jData, regexPattern, "");
+                                fileName = $"{fileName} - {fn}";
+                            }
+                        }
+
+                        wordDoc.SaveAs($@"{OutputFolder}\{fileName}.docx");
+                        AppendTextSafe($" {fileName}.docx\n");
+
+                        if (chkPdf.Checked)
+                        {
+                            CreatePdfFile(wordDoc, fileName, oMissing, AppEnums.Word);
+                            AppendTextSafe($" {fileName}.pdf\n");
+                        }
+
+                        backgroundWorker.ReportProgress(percentage);
                     }
-                    else if (deger == file2Index)
+                    catch (Exception ex)
                     {
-                        var fn = Regex.Replace(jData, regexPattern, "");
-
-                        fileName = $"{fileName} - {fn}";
+                        AppendTextSafe($"Hata (Satır {i + 1}): {ex.Message}\n");
+                    }
+                    finally
+                    {
+                        if (wordDoc != null)
+                        {
+                            wordDoc.Close(ref oMissing, ref oMissing, ref oMissing);
+                            Marshal.ReleaseComObject(wordDoc);
+                        }
                     }
                 }
-
-
-                wordDoc.SaveAs($@"{OutputFolder}\{fileName}.docx");
-                AppendTextSafe($" {fileName}.docx\n");
-
-                if (chkPdf.Checked)
+            }
+            finally
+            {
+                if (wordApp != null)
                 {
-                    CreatePdfFile(wordDoc, fileName, oMissing, AppEnums.Word);
-                    AppendTextSafe($" {fileName}.pdf\n");
+                    wordApp.Quit();
+                    Marshal.ReleaseComObject(wordApp);
                 }
-
-                wordApp.Application.Quit();
-                
-                backgroundWorker.ReportProgress(percentage);
             }
         }
         private void CreatePdfFile(object document, string fileName, Object oMissing, AppEnums type)
@@ -332,25 +397,29 @@ namespace WordAppGUI
                 OpenOutputFolder();
             }
 
+            btnOlustur.Enabled = false;
+            btnDurdur.Enabled = true;
             backgroundWorker.RunWorkerAsync();
         }
         private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            btnDurdur.Enabled = true;
             try
             {
                 if(rbExcel.Checked)
-                    ExcelWriteOperation();
+                    ExcelWriteOperation(e);
                 else if(rbWord.Checked)
-                    WordOperation();
+                    WordOperation(e);
             }
             catch (Exception exception)
             {
                 MessageBox.Show(exception.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
-            btnLoadFile.Enabled = true;
-            MessageBox.Show("Dosyalar oluşturuldu", "Oluşturma İşlemi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            btnOlustur.Enabled = true;
+            //btnLoadFile.Enabled = true;
+            //MessageBox.Show("Dosyalar oluşturuldu", "Oluşturma İşlemi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            //btnOlustur.Enabled = true;
+
         }
         private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
@@ -442,6 +511,43 @@ namespace WordAppGUI
         {
             FrmYardim yardim = new FrmYardim();
             yardim.ShowDialog();
+        }
+
+        private void btnDurdur_Click(object sender, EventArgs e)
+        {
+            if(backgroundWorker.IsBusy)
+                backgroundWorker.CancelAsync();
+        }
+
+        private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+            {
+                MessageBox.Show("İşlem kullanıcı tarafından iptal edildi", "İptal", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else if (e.Error != null)
+            {
+                MessageBox.Show("Bir hata oluştu: " + e.Error.Message, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                MessageBox.Show("Dosyalar başarıyla oluşturuldu", "İşlem Tamamlandı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            btnOlustur.Enabled = true;
+            btnDurdur.Enabled = false;
+            btnLoadFile.Enabled = true;
+        }
+
+        private void FrmMain_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.N)
+                InitRefresh();
+        }
+
+        private void toolStripStatusLabel1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

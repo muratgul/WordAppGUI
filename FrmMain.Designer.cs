@@ -48,10 +48,14 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.btnDurdur = new System.Windows.Forms.Button();
+            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnLoadFile
@@ -75,17 +79,17 @@
             this.flowLayoutPanel.BackColor = System.Drawing.Color.SeaShell;
             this.flowLayoutPanel.Location = new System.Drawing.Point(15, 121);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(301, 347);
+            this.flowLayoutPanel.Size = new System.Drawing.Size(301, 336);
             this.flowLayoutPanel.TabIndex = 1;
             // 
             // btnOlustur
             // 
             this.btnOlustur.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOlustur.BackColor = System.Drawing.Color.DarkRed;
+            this.btnOlustur.BackColor = System.Drawing.Color.LightCoral;
             this.btnOlustur.Enabled = false;
             this.btnOlustur.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnOlustur.ForeColor = System.Drawing.Color.White;
-            this.btnOlustur.Location = new System.Drawing.Point(622, 70);
+            this.btnOlustur.Location = new System.Drawing.Point(542, 71);
             this.btnOlustur.Name = "btnOlustur";
             this.btnOlustur.Size = new System.Drawing.Size(104, 23);
             this.btnOlustur.TabIndex = 2;
@@ -109,7 +113,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.progressBar.Location = new System.Drawing.Point(12, 71);
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(604, 22);
+            this.progressBar.Size = new System.Drawing.Size(524, 22);
             this.progressBar.TabIndex = 4;
             // 
             // backgroundWorker
@@ -117,6 +121,7 @@
             this.backgroundWorker.WorkerReportsProgress = true;
             this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
             this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker_ProgressChanged);
+            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
             // 
             // label2
             // 
@@ -137,7 +142,7 @@
             this.richTextBox.Location = new System.Drawing.Point(322, 121);
             this.richTextBox.Name = "richTextBox";
             this.richTextBox.ReadOnly = true;
-            this.richTextBox.Size = new System.Drawing.Size(404, 347);
+            this.richTextBox.Size = new System.Drawing.Size(404, 336);
             this.richTextBox.TabIndex = 6;
             this.richTextBox.Text = "";
             // 
@@ -263,12 +268,45 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Seçenekler";
             // 
+            // btnDurdur
+            // 
+            this.btnDurdur.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnDurdur.BackColor = System.Drawing.Color.Orange;
+            this.btnDurdur.Enabled = false;
+            this.btnDurdur.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDurdur.ForeColor = System.Drawing.Color.White;
+            this.btnDurdur.Location = new System.Drawing.Point(652, 71);
+            this.btnDurdur.Name = "btnDurdur";
+            this.btnDurdur.Size = new System.Drawing.Size(74, 23);
+            this.btnDurdur.TabIndex = 2;
+            this.btnDurdur.Text = "Durdur";
+            this.btnDurdur.UseVisualStyleBackColor = false;
+            this.btnDurdur.Click += new System.EventHandler(this.btnDurdur_Click);
+            // 
+            // statusStrip1
+            // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripStatusLabel1});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 460);
+            this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Size = new System.Drawing.Size(738, 22);
+            this.statusStrip1.TabIndex = 15;
+            this.statusStrip1.Text = "statusStrip1";
+            // 
+            // toolStripStatusLabel1
+            // 
+            this.toolStripStatusLabel1.BackColor = System.Drawing.Color.Transparent;
+            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(125, 17);
+            this.toolStripStatusLabel1.Text = "Yeni Çalışma : Ctrl + N";
+            this.toolStripStatusLabel1.Click += new System.EventHandler(this.toolStripStatusLabel1_Click);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(738, 478);
+            this.ClientSize = new System.Drawing.Size(738, 482);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
@@ -278,19 +316,25 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.progressBar);
+            this.Controls.Add(this.btnDurdur);
             this.Controls.Add(this.btnOlustur);
             this.Controls.Add(this.flowLayoutPanel);
+            this.Controls.Add(this.statusStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.Name = "FrmMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Word Excel Maker";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FrmMain_KeyDown);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            this.statusStrip1.ResumeLayout(false);
+            this.statusStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -317,6 +361,9 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.Button btnDurdur;
+        private System.Windows.Forms.StatusStrip statusStrip1;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
     }
 }
 

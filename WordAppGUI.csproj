@@ -292,6 +292,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="layoutapplication.ico" />
+    <None Include="Resources\layoutapplication.ico" />
     <None Include="Resources\alanlarEXCEL.png" />
     <None Include="Resources\excel.png" />
     <None Include="Resources\alanlar.png" />
